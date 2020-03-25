@@ -1,5 +1,6 @@
 const superagent = require('superagent');
 const cheerio = require('cheerio');
+const suffix = require('add-number-suffix');
 
 class Corona {
     constructor(options) {
@@ -51,10 +52,10 @@ class Corona {
     check() {
         this.newData.forEach((obj, index) => {
             if (this.data[index].newCases != obj.newCases) {
-                this.sendWebhook('CASES', obj);
+                this.sendWebhook('CASES', obj, index);
             }
             if (this.data[index].newDeaths != obj.newDeaths) {
-                this.sendWebhook('DEATHS', obj);
+                this.sendWebhook('DEATHS', obj, index);
             }
             this.data[index] = obj;
         })
@@ -81,14 +82,14 @@ class Corona {
         return field;
     }
 
-    sendWebhook(type, object) {
+    sendWebhook(type, object, rank) {
 
         let people = this.users[object.country] || [];
 
         let embed = {
             embeds: [
                 {
-                    title: `${object.country} update!`,
+                    title: `${object.country} update! (${suffix.addSuffix(rank)})`,
                     color: type == 'DEATHS' ? 16711680 : 16772778,
                     timestamp: new Date(),
                     footer: {
