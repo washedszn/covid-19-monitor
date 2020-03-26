@@ -28,12 +28,18 @@ class Corona {
                 this.newData = [];
 
                 $('#main_table_countries_today > tbody:nth-child(2) > tr').each((index, element) => {
+                    let country = $($(element).find('td')[0]).text().trim();
+                    let cases = $($(element).find('td')[1]).text().trim();
+                    let deaths = $($(element).find('td')[3]).text().trim();
+                    let newCases = $($(element).find('td')[2]).text().trim();
+                    let newDeaths = $($(element).find('td')[4]).text().trim();
+                    
                     this.newData[index] = {
-                        country: $($(element).find('td')[0]).text().trim(),
-                        cases: $($(element).find('td')[1]).text().trim(),
-                        deaths: $($(element).find('td')[3]).text().trim(),
-                        newCases: $($(element).find('td')[2]).text().trim(),
-                        newDeaths: $($(element).find('td')[4]).text().trim()
+                        country: country,
+                        cases: cases == '' ? '0' : cases,
+                        deaths: deaths == '' ? '0' : deaths,
+                        newCases: newCases == '' ? '0' : newCases,
+                        newDeaths: newDeaths == '' ? '0' : newDeaths
                     }
                 })
 
@@ -50,12 +56,16 @@ class Corona {
     }
 
     check() {
+        let deathsRank = this.newData.concat().sort((a, b) => {
+            return parseFloat(b.deaths.replace(/,/g, '')) - parseFloat(a.deaths.replace(/,/g, ''))
+        })
+
         this.newData.forEach((obj, index) => {
             if (this.data[index].newCases != obj.newCases) {
-                this.sendWebhook('CASES', obj, index);
+                this.sendWebhook('CASES', obj, index + 1, deathsRank.indexOf(obj) + 1);
             }
             if (this.data[index].newDeaths != obj.newDeaths) {
-                this.sendWebhook('DEATHS', obj, index);
+                this.sendWebhook('DEATHS', obj, index + 1, deathsRank.indexOf(obj) + 1);
             }
             this.data[index] = obj;
         })
@@ -68,13 +78,13 @@ class Corona {
             case 'CASES':
                 field = {
                     name: 'New Cases (Today):',
-                    value: object.newCases == '' ? '0' : object.newCases
+                    value: object.newCases
                 }
                 break;
             case 'DEATHS':
                 field = {
                     name: 'New Deaths (Today):',
-                    value: object.newDeaths == '' ? '0' : object.newDeaths
+                    value: object.newDeaths
                 }
                 break;
         }
@@ -82,14 +92,14 @@ class Corona {
         return field;
     }
 
-    sendWebhook(type, object, rank) {
+    sendWebhook(type, object, casesRank, deathsRank) {
 
         let people = this.users[object.country] || [];
 
         let embed = {
             embeds: [
                 {
-                    title: `${object.country} update! (${suffix.addSuffix(rank)})`,
+                    title: `${object.country} update!`,
                     color: type == 'DEATHS' ? 16711680 : 16772778,
                     timestamp: new Date(),
                     footer: {
@@ -97,13 +107,13 @@ class Corona {
                     },
                     fields: [
                         {
-                            name: 'Total Cases:',
-                            value: object.cases == '' ? '0' : object.cases,
+                            name: `Total Cases (${suffix.addSuffix(casesRank)}):`,
+                            value: object.cases,
                             inline: true
                         },
                         {
-                            name: 'Total Deaths:',
-                            value: object.deaths == '' ? '0' : object.deaths,
+                            name: `Total Deaths (${suffix.addSuffix(deathsRank)}):`,
+                            value: object.deaths,
                             inline: true
                         },
                         this.fieldTest(type, object)
@@ -143,4 +153,4 @@ let options = {
 }
 
 let run = new Corona(options)
-run.start();
+
