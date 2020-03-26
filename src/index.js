@@ -138,6 +138,9 @@ class Corona {
             })
             .catch(err => {
                 console.log(`${object.country} Error`)
+                setTimeout(() => {
+                    this.sendWebhook(type, object, casesRank, deathsRank)
+                }, 5000)
             })
     }
 }
